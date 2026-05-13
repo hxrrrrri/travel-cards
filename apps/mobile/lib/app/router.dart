@@ -11,11 +11,14 @@ import '../features/discovery/presentation/screens/discovery_setup_screen.dart';
 import '../features/map/presentation/screens/discovery_map_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authNotifier = ref.read(authControllerProvider.notifier);
+  final changeNotifier = ChangeNotifier();
+  // Notify router when auth state changes
+  ref.listen<AuthState>(authControllerProvider, (_, __) => changeNotifier.notifyListeners());
+  ref.onDispose(() => changeNotifier.dispose());
 
   return GoRouter(
     initialLocation: '/auth',
-    refreshListenable: authNotifier,
+    refreshListenable: changeNotifier,
     redirect: (context, state) {
       final isLoggedIn = ref.read(authControllerProvider).isLoggedIn;
       final isAuthRoute = state.matchedLocation == '/auth';

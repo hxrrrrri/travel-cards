@@ -1,10 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme.dart';
-import '../../../../core/utils/haversine.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../shared/models/place_model.dart';
 import '../../../../shared/models/route_info_model.dart';
 import '../../../../shared/models/travel_card_model.dart';
@@ -32,77 +31,87 @@ class PlaceDetailSheet extends ConsumerWidget {
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
       minChildSize: 0.35,
-      maxChildSize: 0.9,
+      maxChildSize: 0.92,
       expand: false,
-      builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: ListView(
-          controller: scrollCtrl,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.border,
-                  borderRadius: BorderRadius.circular(2),
+      builder: (_, scrollCtrl) => ClipRRect(
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surface.withOpacity(0.95),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(
+                  color: Colors.white.withOpacity(0.07), width: 1),
+            ),
+            child: ListView(
+              controller: scrollCtrl,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
+                _PlaceHero(place: place, cat: cat),
+                const SizedBox(height: 16),
+                if (route != null) ...[
+                  _RouteBar(route: route!),
+                  const SizedBox(height: 14),
+                ],
+                _InfoChips(place: place),
+                const SizedBox(height: 16),
+                _AddressRow(address: place.address),
+                if (place.reviews.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _ReviewsSection(reviews: place.reviews),
+                ],
+                const SizedBox(height: 24),
+                _ActionButtons(
+                    place: place,
+                    cardId: cardId,
+                    status: status,
+                    ref: ref),
+              ],
             ),
-            const SizedBox(height: 16),
-            _PlaceHeader(place: place, cat: cat),
-            const SizedBox(height: 16),
-            if (route != null) _RouteInfoRow(route: route!),
-            const SizedBox(height: 16),
-            _InfoRow(Icons.location_on_outlined, place.address),
-            if (place.isOpenNow)
-              const _InfoRow(Icons.access_time, 'Open Now', valueColor: AppTheme.success)
-            else
-              const _InfoRow(Icons.access_time, 'Closed', valueColor: AppTheme.danger),
-            const SizedBox(height: 20),
-            if (place.reviews.isNotEmpty) ...[
-              Text('Reviews', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 10),
-              ...place.reviews.map((r) => _ReviewTile(review: r)),
-              const SizedBox(height: 16),
-            ],
-            _ActionButtons(
-              place: place,
-              cardId: cardId,
-              status: status,
-              ref: ref,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _PlaceHeader extends StatelessWidget {
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+
+class _PlaceHero extends StatelessWidget {
   final PlaceModel place;
   final TravelCategory cat;
-
-  const _PlaceHeader({required this.place, required this.cat});
+  const _PlaceHero({required this.place, required this.cat});
 
   @override
   Widget build(BuildContext context) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceElevated,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.border),
+              gradient: AppTheme.cardGradientAt(
+                  TravelCategory.values.indexOf(cat)),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Center(
-              child: Text(cat.emoji, style: const TextStyle(fontSize: 26)),
+              child: Text(cat.emoji,
+                  style: const TextStyle(fontSize: 28)),
             ),
           ),
           const SizedBox(width: 14),
@@ -113,25 +122,29 @@ class _PlaceHeader extends StatelessWidget {
                 Text(place.name,
                     style: const TextStyle(
                         color: AppTheme.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700)),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4)),
                 const SizedBox(height: 4),
                 Text(cat.label,
                     style: const TextStyle(
                         color: AppTheme.textSecondary, fontSize: 13)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.star, color: AppTheme.accentOrange, size: 16),
+                    const Icon(Icons.star_rounded,
+                        color: Color(0xFFFFBF00), size: 16),
                     const SizedBox(width: 4),
                     Text(place.rating.toStringAsFixed(1),
                         style: const TextStyle(
                             color: AppTheme.textPrimary,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 6),
-                    Text('(${place.reviewCount} reviews)',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14)),
+                    const SizedBox(width: 4),
+                    Text('(${place.reviewCount})',
                         style: const TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 12)),
+                            color: AppTheme.textSecondary,
+                            fontSize: 13)),
                   ],
                 ),
               ],
@@ -141,27 +154,35 @@ class _PlaceHeader extends StatelessWidget {
       );
 }
 
-class _RouteInfoRow extends StatelessWidget {
-  final RouteInfoModel route;
+// ─── Route bar ────────────────────────────────────────────────────────────────
 
-  const _RouteInfoRow({required this.route});
+class _RouteBar extends StatelessWidget {
+  final RouteInfoModel route;
+  const _RouteBar({required this.route});
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: AppTheme.surfaceElevated,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppTheme.border),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _RouteChip(Icons.straighten, route.distanceText),
-            Container(width: 1, height: 20, color: AppTheme.border),
-            _RouteChip(Icons.access_time, route.durationText),
-            Container(width: 1, height: 20, color: AppTheme.border),
-            _RouteChip(Icons.directions_car, 'By car'),
+            _RouteChip(
+                icon: Icons.straighten, label: route.distanceText),
+            Container(
+                width: 0.5, height: 20, color: AppTheme.border),
+            _RouteChip(
+                icon: Icons.access_time_outlined,
+                label: route.durationText),
+            Container(
+                width: 0.5, height: 20, color: AppTheme.border),
+            _RouteChip(
+                icon: Icons.directions_car_outlined, label: 'Drive'),
           ],
         ),
       );
@@ -170,58 +191,141 @@ class _RouteInfoRow extends StatelessWidget {
 class _RouteChip extends StatelessWidget {
   final IconData icon;
   final String label;
-
-  const _RouteChip(this.icon, this.label);
+  const _RouteChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          Icon(icon, color: AppTheme.primaryCyan, size: 16),
-          const SizedBox(width: 6),
+          Icon(icon, color: AppTheme.primaryCyan, size: 15),
+          const SizedBox(width: 5),
           Text(label,
               style: const TextStyle(
-                  color: AppTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
+                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600)),
         ],
       );
 }
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final Color? valueColor;
+// ─── Info chips ───────────────────────────────────────────────────────────────
 
-  const _InfoRow(this.icon, this.value, {this.valueColor});
+class _InfoChips extends StatelessWidget {
+  final PlaceModel place;
+  const _InfoChips({required this.place});
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(
-          children: [
-            Icon(icon, color: AppTheme.textSecondary, size: 16),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(value,
-                  style: TextStyle(
-                      color: valueColor ?? AppTheme.textSecondary,
-                      fontSize: 13)),
+  Widget build(BuildContext context) => Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _Chip(
+            label: place.isOpenNow ? 'Open Now' : 'Closed',
+            color:
+                place.isOpenNow ? AppTheme.success : AppTheme.danger,
+            icon: Icons.schedule_outlined,
+          ),
+          if (place.distanceMeters != null)
+            _Chip(
+              label: place.distanceMeters! < 1000
+                  ? '${place.distanceMeters!.round()}m away'
+                  : '${(place.distanceMeters! / 1000).toStringAsFixed(1)} km away',
+              color: AppTheme.primaryCyan,
+              icon: Icons.near_me_outlined,
             ),
+          _Chip(
+            label:
+                '${place.reviewCount} reviews',
+            color: const Color(0xFFFFBF00),
+            icon: Icons.star_outline,
+          ),
+        ],
+      );
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData icon;
+  const _Chip(
+      {required this.label, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.25)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 13),
+            const SizedBox(width: 5),
+            Text(label,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       );
 }
 
-class _ReviewTile extends StatelessWidget {
-  final PlaceReview review;
+// ─── Address ─────────────────────────────────────────────────────────────────
 
-  const _ReviewTile({required this.review});
+class _AddressRow extends StatelessWidget {
+  final String address;
+  const _AddressRow({required this.address});
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          const Icon(Icons.location_on_outlined,
+              color: AppTheme.textSecondary, size: 15),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(address,
+                style: const TextStyle(
+                    color: AppTheme.textSecondary, fontSize: 13)),
+          ),
+        ],
+      );
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+class _ReviewsSection extends StatelessWidget {
+  final List<PlaceReview> reviews;
+  const _ReviewsSection({required this.reviews});
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Reviews',
+              style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          ...reviews.map((r) => _ReviewCard(review: r)),
+        ],
+      );
+}
+
+class _ReviewCard extends StatelessWidget {
+  final PlaceReview review;
+  const _ReviewCard({required this.review});
 
   @override
   Widget build(BuildContext context) => Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.surfaceElevated,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppTheme.border),
         ),
         child: Column(
@@ -229,35 +333,61 @@ class _ReviewTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(review.author,
-                    style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500)),
-                const Spacer(),
-                ...List.generate(
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.gradientPurple,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      review.author[0].toUpperCase(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(review.author,
+                      style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600)),
+                ),
+                Row(
+                  children: List.generate(
                     5,
                     (i) => Icon(
-                          i < review.rating.round()
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: AppTheme.accentOrange,
-                          size: 12,
-                        )),
+                      i < review.rating.round()
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      color: const Color(0xFFFFBF00),
+                      size: 13,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 6),
                 Text(review.timeAgo,
                     style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 11)),
+                        color: AppTheme.textSecondary, fontSize: 10)),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(review.text,
                 style: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 13)),
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    height: 1.5)),
           ],
         ),
       );
 }
+
+// ─── Action buttons ───────────────────────────────────────────────────────────
 
 class _ActionButtons extends StatelessWidget {
   final PlaceModel place;
@@ -275,56 +405,125 @@ class _ActionButtons extends StatelessWidget {
   Future<void> _navigate() async {
     final url = Uri.parse(
         'https://www.google.com/maps/dir/?api=1'
-        '&destination=${place.lat},${place.lng}'
-        '&travelmode=driving');
+        '&destination=${place.lat},${place.lng}&travelmode=driving');
     if (await canLaunchUrl(url)) await launchUrl(url);
   }
 
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          AppButton(
-            label: 'Start Navigation',
-            icon: Icons.navigation,
-            onPressed: _navigate,
-            color: AppTheme.primaryCyan,
+          GestureDetector(
+            onTap: _navigate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                gradient: AppTheme.gradientTeal,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                      color: AppTheme.primaryCyan.withOpacity(0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.navigation, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('Start Navigation',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 10),
-          if (status != PlaceVisitStatus.visited)
-            AppButton(
-              label: 'Mark as Visited',
-              icon: Icons.check_circle_outline,
-              outlined: true,
-              color: AppTheme.success,
-              onPressed: () {
-                ref
-                    .read(travelCardControllerProvider.notifier)
-                    .markVisited(cardId, place.id);
-                Navigator.pop(context);
-              },
-            )
-          else
-            AppButton(
-              label: 'Visited ✓',
-              icon: Icons.check_circle,
-              outlined: true,
-              color: AppTheme.success,
-              onPressed: null,
-            ),
-          const SizedBox(height: 10),
-          if (status == PlaceVisitStatus.pending)
-            AppButton(
-              label: 'Skip',
-              icon: Icons.skip_next,
-              outlined: true,
-              color: AppTheme.textSecondary,
-              onPressed: () {
-                ref
-                    .read(travelCardControllerProvider.notifier)
-                    .markSkipped(cardId, place.id);
-                Navigator.pop(context);
-              },
-            ),
+          Row(
+            children: [
+              if (status != PlaceVisitStatus.visited)
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(travelCardControllerProvider.notifier)
+                          .markVisited(cardId, place.id);
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.success.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: AppTheme.success.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline,
+                              color: AppTheme.success, size: 16),
+                          SizedBox(width: 6),
+                          Text('Mark Visited',
+                              style: TextStyle(
+                                  color: AppTheme.success,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle,
+                            color: AppTheme.success, size: 16),
+                        SizedBox(width: 6),
+                        Text('Visited ✓',
+                            style: TextStyle(
+                                color: AppTheme.success,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+              if (status == PlaceVisitStatus.pending) ...[
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: () {
+                    ref
+                        .read(travelCardControllerProvider.notifier)
+                        .markSkipped(cardId, place.id);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceElevated,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: const Icon(Icons.skip_next,
+                        color: AppTheme.textSecondary, size: 20),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       );
 }

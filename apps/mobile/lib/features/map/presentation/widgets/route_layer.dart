@@ -18,7 +18,7 @@ class RouteLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final polylines = routes.map((r) {
+    final polylines = routes.map<Polyline<Object>>((r) {
       final isSelected = r.destinationPlaceId == selectedPlaceId;
       final status =
           placeStatuses[r.destinationPlaceId] ?? PlaceVisitStatus.pending;
@@ -26,11 +26,11 @@ class RouteLayer extends StatelessWidget {
       final width = isSelected ? 4.0 : 2.5;
       final opacity = isSelected ? 1.0 : 0.5;
 
-      return Polyline(
+      return Polyline<Object>(
         points: r.polylinePoints,
         strokeWidth: width,
         color: color.withOpacity(opacity),
-        isDotted: true,
+        pattern: const StrokePattern.solid(),
       );
     }).toList();
 

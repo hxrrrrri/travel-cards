@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -41,7 +40,7 @@ class AuthState {
       );
 }
 
-class AuthController extends StateNotifier<AuthState> with ChangeNotifier {
+class AuthController extends StateNotifier<AuthState> {
   final AuthRepository _repo;
 
   AuthController(this._repo)
@@ -62,7 +61,7 @@ class AuthController extends StateNotifier<AuthState> with ChangeNotifier {
       email: _repo.currentEmail,
       displayName: _repo.currentDisplayName,
     );
-    notifyListeners();
+    // State updates are communicated via Riverpod StateNotifier
   }
 
   Future<void> login(String email, String password) async {
@@ -80,7 +79,7 @@ class AuthController extends StateNotifier<AuthState> with ChangeNotifier {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
-    notifyListeners();
+    // State updates are communicated via Riverpod StateNotifier
   }
 
   Future<void> signup(String email, String password, String name) async {
@@ -98,13 +97,13 @@ class AuthController extends StateNotifier<AuthState> with ChangeNotifier {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
-    notifyListeners();
+    // State updates are communicated via Riverpod StateNotifier
   }
 
   Future<void> logout() async {
     await _repo.logout();
     state = const AuthState();
-    notifyListeners();
+    // State updates are communicated via Riverpod StateNotifier
   }
 }
 
