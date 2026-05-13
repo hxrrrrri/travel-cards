@@ -1,0 +1,42 @@
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/build/
+apps/mobile/.idea/
+apps/mobile/*.iml
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/key.properties
+apps/mobile/android/app/google-services.json
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/ios/Pods/
+apps/mobile/ios/Podfile.lock
+apps/mobile/macos/Flutter/GeneratedPluginRegistrant.swift
+apps/mobile/web/
+
+# Environment
+.env
+.env.local
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Backend
+backend/node_modules/
+backend/dist/
+backend/.env
+
+# Misc
+*.log
+pubspec.lock
