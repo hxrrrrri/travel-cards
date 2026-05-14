@@ -1,6 +1,8 @@
 import '../../../app/env.dart';
 import '../../../core/utils/ranking.dart';
 import '../../../shared/models/discovery_models.dart';
+import '../../../shared/models/place_model.dart';
+import '../../../shared/models/route_info_model.dart';
 import '../../../shared/models/travel_category.dart';
 import '../domain/discovery_repository.dart';
 import 'providers/demo_place_provider.dart';
@@ -17,9 +19,17 @@ class DiscoveryRepositoryImpl implements DiscoveryRepository {
   @override
   Future<DiscoveryResponse> discover(DiscoveryRequest req) async {
     // 1. Fetch places ─────────────────────────────────────────────────────────
-    final rawPlaces = Env.demoMode
-        ? await _demoPlaces.searchNearby(req)
-        : await _realPlaces.searchNearby(req);
+    List<PlaceModel> rawPlaces;
+    if (Env.demoMode) {
+      rawPlaces = await _demoPlaces.searchNearby(req);
+    } else {
+      try {
+        rawPlaces = await _realPlaces.searchNearby(req);
+      } catch (e) {
+        // Overpass failed, fall back to demo data
+        rawPlaces = await _demoPlaces.searchNearby(req);
+      }
+    }
 
     // 2. Rank + filter ────────────────────────────────────────────────────────
     final engine = RankingEngine(
@@ -32,20 +42,33 @@ class DiscoveryRepositoryImpl implements DiscoveryRepository {
     final ranked = engine.rank(rawPlaces);
 
     // 3. Fetch real routes ────────────────────────────────────────────────────
-    final routes = Env.demoMode
-        ? await _demoRoutes.getRoutes(
-            travelCardId: req.travelCardId,
-            originLat: req.originLat,
-            originLng: req.originLng,
-            places: ranked,
-          )
-        : await _realRoutes.getRoutes(
-            travelCardId: req.travelCardId,
-            originLat: req.originLat,
-            originLng: req.originLng,
-            places: ranked,
-            topN: 12,
-          );
+    List<RouteInfoModel> routes;
+    if (Env.demoMode) {
+      routes = await _demoRoutes.getRoutes(
+        travelCardId: req.travelCardId,
+        originLat: req.originLat,
+        originLng: req.originLng,
+        places: ranked,
+      );
+    } else {
+      try {
+        routes = await _realRoutes.getRoutes(
+          travelCardId: req.travelCardId,
+          originLat: req.originLat,
+          originLng: req.originLng,
+          places: ranked,
+          topN: 12,
+        );
+      } catch (e) {
+        // OSRM failed, use demo routes
+        routes = await _demoRoutes.getRoutes(
+          travelCardId: req.travelCardId,
+          originLat: req.originLat,
+          originLng: req.originLng,
+          places: ranked,
+        );
+      }
+    }
 
     return DiscoveryResponse(
       travelCardId: req.travelCardId,

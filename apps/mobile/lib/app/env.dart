@@ -2,7 +2,7 @@ class Env {
   // ─── App mode ────────────────────────────────────────────────────────────
   // true  → use seeded demo data, no API keys required
   // false → use real Overpass (places) + OSRM (routes); optional Supabase
-  static bool demoMode = true;
+  static bool demoMode = false;
 
   // ─── Demo anchor (Madikeri, Coorg, India) ────────────────────────────────
   static double demoLat = 12.3375;
@@ -34,8 +34,8 @@ class Env {
   // ─── Supabase (optional cloud backend) ───────────────────────────────────
   // When empty → app uses Hive local storage only
   // Get from: https://supabase.com → Project Settings → API
-  static String supabaseUrl = '';
-  static String supabaseAnonKey = '';
+  static String supabaseUrl = 'https://byvwkpppvgrkydsopend.supabase.co';
+  static String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5dndrcHBwdmdya3lkc29wZW5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NjIzMDYsImV4cCI6MjA5NDMzODMwNn0.UAHkRJRJkgKZBlctqIjbLcmZba43OgpLWYsvFTAkiC0';
 
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

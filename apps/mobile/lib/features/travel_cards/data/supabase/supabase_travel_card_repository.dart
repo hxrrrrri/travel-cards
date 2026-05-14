@@ -43,10 +43,10 @@ class SupabaseTravelCardRepository implements TravelCardRepository {
       'description': description,
       'status': 'draft',
       'radius_meters': 10000,
-      'selected_categories': jsonEncode([]),
-      'discovered_places': jsonEncode([]),
-      'routes': jsonEncode([]),
-      'place_statuses': jsonEncode({}),
+      'selected_categories': [],
+      'discovered_places': [],
+      'routes': [],
+      'place_statuses': {},
       'created_at': now.toIso8601String(),
       'updated_at': now.toIso8601String(),
     });
@@ -73,13 +73,10 @@ class SupabaseTravelCardRepository implements TravelCardRepository {
       'origin_name': card.originName,
       'radius_meters': card.radiusMeters,
       'status': card.status.name,
-      'selected_categories': jsonEncode(card.selectedCategories),
-      'discovered_places':
-          jsonEncode(card.discoveredPlaces.map((p) => p.toJson()).toList()),
-      'routes':
-          jsonEncode(card.routes.map((r) => r.toJson()).toList()),
-      'place_statuses':
-          jsonEncode(card.placeStatuses.map((k, v) => MapEntry(k, v.name))),
+      'selected_categories': card.selectedCategories,
+      'discovered_places': card.discoveredPlaces.map((p) => p.toJson()).toList(),
+      'routes': card.routes.map((r) => r.toJson()).toList(),
+      'place_statuses': card.placeStatuses.map((k, v) => MapEntry(k, v.name)),
       'updated_at': now.toIso8601String(),
     });
   }
@@ -133,21 +130,32 @@ class SupabaseTravelCardRepository implements TravelCardRepository {
   // ─── Row parser ─────────────────────────────────────────────────────────────
 
   TravelCardModel _fromRow(Map<String, dynamic> r) {
-    final statusMap =
-        (jsonDecode(r['place_statuses'] as String? ?? '{}') as Map)
-            .map((k, v) => MapEntry(
-                  k as String,
-                  PlaceVisitStatus.values.firstWhere(
-                      (s) => s.name == v,
-                      orElse: () => PlaceVisitStatus.pending),
-                ));
+    List _parseList(dynamic value) {
+      if (value == null) return [];
+      if (value is List) return value;
+      if (value is String) return jsonDecode(value) as List;
+      return [];
+    }
 
-    final places = (jsonDecode(r['discovered_places'] as String? ?? '[]')
-            as List)
+    Map _parseMap(dynamic value) {
+      if (value == null) return {};
+      if (value is Map) return value;
+      if (value is String) return jsonDecode(value) as Map;
+      return {};
+    }
+
+    final statusMap = _parseMap(r['place_statuses']).map((k, v) => MapEntry(
+          k as String,
+          PlaceVisitStatus.values.firstWhere(
+              (s) => s.name == v,
+              orElse: () => PlaceVisitStatus.pending),
+        ));
+
+    final places = _parseList(r['discovered_places'])
         .map((p) => PlaceModel.fromJson(p as Map<String, dynamic>))
         .toList();
 
-    final routes = (jsonDecode(r['routes'] as String? ?? '[]') as List)
+    final routes = _parseList(r['routes'])
         .map((rt) => RouteInfoModel.fromJson(rt as Map<String, dynamic>))
         .toList();
 
@@ -160,9 +168,7 @@ class SupabaseTravelCardRepository implements TravelCardRepository {
       originLng: (r['origin_lng'] as num?)?.toDouble(),
       originName: r['origin_name'] as String?,
       radiusMeters: r['radius_meters'] as int? ?? 10000,
-      selectedCategories:
-          (jsonDecode(r['selected_categories'] as String? ?? '[]') as List)
-              .cast<String>(),
+      selectedCategories: _parseList(r['selected_categories']).cast<String>(),
       status: TravelCardStatus.values.firstWhere(
           (s) => s.name == (r['status'] as String? ?? 'draft'),
           orElse: () => TravelCardStatus.draft),

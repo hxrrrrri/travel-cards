@@ -1,12 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/env.dart';
 import '../../../../shared/models/place_model.dart';
 import '../../../../shared/models/route_info_model.dart';
 import '../../../../shared/models/travel_card_model.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../../data/supabase/supabase_travel_card_repository.dart';
-import '../../data/travel_card_repository_impl.dart';
+import '../../data/hybrid_travel_card_repository.dart';
 import '../../domain/travel_card_repository.dart';
 
 class TravelCardState {
@@ -103,12 +101,10 @@ class TravelCardController extends StateNotifier<TravelCardState> {
   }
 }
 
-// ─── Provider — auto-selects Supabase or Hive ─────────────────────────────────
+// ─── Provider — tries Supabase first, falls back to Hive ────────────────────
 
-final _travelCardRepoProvider = Provider<TravelCardRepository>((_) {
-  if (Env.hasSupabase) return SupabaseTravelCardRepository();
-  return TravelCardRepositoryImpl();
-});
+final _travelCardRepoProvider = Provider<TravelCardRepository>(
+    (_) => HybridTravelCardRepository());
 
 final travelCardControllerProvider =
     StateNotifierProvider<TravelCardController, TravelCardState>((ref) {

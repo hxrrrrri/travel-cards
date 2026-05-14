@@ -84,9 +84,10 @@ class OverpassPlaceProvider {
     try {
       final response = await _dio.post(
         Env.overpassUrl,
-        data: 'data=${Uri.encodeComponent(query)}',
+        data: query,
         options: Options(
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          contentType: 'application/x-www-form-urlencoded',
+          headers: {'Accept': 'application/json'},
         ),
       );
 
@@ -110,18 +111,23 @@ class OverpassPlaceProvider {
 
   String _buildQuery(
       List<List<String>> tags, double lat, double lng, int radius) {
-    final filter = tags.map((t) {
-      final escaped = t[1].replaceAll('|', '|');
-      return '''
-  node["${t[0]}"="${t[1]}"](around:$radius,$lat,$lng);
-  way["${t[0]}"="${t[1]}"](around:$radius,$lat,$lng);''';
-    }).join('\n');
+    // Convert radius (meters) to degrees (~111km per degree)
+    final radiusDeg = radius / 111000;
+    final south = lat - radiusDeg;
+    final west = lng - radiusDeg;
+    final north = lat + radiusDeg;
+    final east = lng + radiusDeg;
 
-    return '''[out:json][timeout:30];
-(
-$filter
-);
-out center tags;''';
+    // Use bbox filter (more reliable than around)
+    final bbox = '$south,$west,$north,$east';
+
+    final queries = <String>[];
+    for (final tag in tags.take(3)) {
+      queries.add('node["${tag[0]}"="${tag[1]}"](bbox:$bbox);');
+      queries.add('way["${tag[0]}"="${tag[1]}"](bbox:$bbox);');
+    }
+
+    return '[out:json][timeout:60];(${queries.join('')});out center tags;';
   }
 
   bool _hasName(dynamic e) =>

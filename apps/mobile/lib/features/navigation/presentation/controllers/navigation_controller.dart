@@ -138,7 +138,7 @@ class NavigationController extends StateNotifier<NavigationState> {
     try {
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.navigation),
+            accuracy: LocationAccuracy.bestForNavigation),
       );
       _processPosition(pos);
     } catch (_) {}
@@ -146,8 +146,8 @@ class NavigationController extends StateNotifier<NavigationState> {
     // Stream updates
     _posSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.navigation,
-        distanceFilter: 5, // update every 5 meters moved
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 5,
       ),
     ).listen(_processPosition);
 

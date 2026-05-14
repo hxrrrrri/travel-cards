@@ -122,6 +122,7 @@ class _DiscoveryMapScreenState extends ConsumerState<DiscoveryMapScreen> {
             urlTemplate: AppConstants.darkMapTileUrl,
             subdomains: AppConstants.mapSubdomains,
             userAgentPackageName: 'com.tripgraph.mobile',
+            retinaMode: true,
           ),
           RouteLayer(
             routes: card.routes,
