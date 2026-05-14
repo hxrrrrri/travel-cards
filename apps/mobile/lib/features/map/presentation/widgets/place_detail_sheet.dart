@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme.dart';
@@ -402,7 +403,7 @@ class _ActionButtons extends StatelessWidget {
     required this.ref,
   });
 
-  Future<void> _navigate() async {
+  Future<void> _openExternal() async {
     final url = Uri.parse(
         'https://www.google.com/maps/dir/?api=1'
         '&destination=${place.lat},${place.lng}&travelmode=driving');
@@ -412,8 +413,12 @@ class _ActionButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
         children: [
+          // ── In-app navigation (real turn-by-turn) ──────────────────────
           GestureDetector(
-            onTap: _navigate,
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/navigate/$cardId/${place.id}');
+            },
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -437,6 +442,33 @@ class _ActionButtons extends StatelessWidget {
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // ── External maps fallback ─────────────────────────────────────
+          GestureDetector(
+            onTap: _openExternal,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.open_in_new,
+                      color: AppTheme.textSecondary, size: 15),
+                  SizedBox(width: 6),
+                  Text('Open in Google Maps',
+                      style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500)),
                 ],
               ),
             ),

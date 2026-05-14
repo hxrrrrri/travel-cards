@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/travel_card_model.dart';
+
+import '../../../../app/env.dart';
 import '../../../../shared/models/place_model.dart';
 import '../../../../shared/models/route_info_model.dart';
+import '../../../../shared/models/travel_card_model.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../data/supabase/supabase_travel_card_repository.dart';
 import '../../data/travel_card_repository_impl.dart';
 import '../../domain/travel_card_repository.dart';
 
@@ -30,17 +33,16 @@ class TravelCardState {
 
   int get totalDiscovered =>
       cards.fold(0, (sum, c) => sum + c.discoveredCount);
-  int get totalVisited =>
-      cards.fold(0, (sum, c) => sum + c.visitedCount);
-  int get totalPending =>
-      cards.fold(0, (sum, c) => sum + c.pendingCount);
+  int get totalVisited => cards.fold(0, (sum, c) => sum + c.visitedCount);
+  int get totalPending => cards.fold(0, (sum, c) => sum + c.pendingCount);
 }
 
 class TravelCardController extends StateNotifier<TravelCardState> {
   final TravelCardRepository _repo;
   final String _userId;
 
-  TravelCardController(this._repo, this._userId) : super(const TravelCardState()) {
+  TravelCardController(this._repo, this._userId)
+      : super(const TravelCardState()) {
     loadCards();
   }
 
@@ -54,7 +56,8 @@ class TravelCardController extends StateNotifier<TravelCardState> {
     }
   }
 
-  Future<TravelCardModel?> createCard(String title, String description) async {
+  Future<TravelCardModel?> createCard(
+      String title, String description) async {
     try {
       final card = await _repo.createCard(_userId, title, description);
       await loadCards();
@@ -88,8 +91,8 @@ class TravelCardController extends StateNotifier<TravelCardState> {
     await loadCards();
   }
 
-  Future<void> updateOrigin(String cardId, double lat, double lng, String name,
-      int radius, List<String> cats) async {
+  Future<void> updateOrigin(String cardId, double lat, double lng,
+      String name, int radius, List<String> cats) async {
     await _repo.updateOrigin(cardId, lat, lng, name, radius, cats);
     await loadCards();
   }
@@ -100,8 +103,12 @@ class TravelCardController extends StateNotifier<TravelCardState> {
   }
 }
 
-final _travelCardRepoProvider =
-    Provider<TravelCardRepository>((_) => TravelCardRepositoryImpl());
+// ─── Provider — auto-selects Supabase or Hive ─────────────────────────────────
+
+final _travelCardRepoProvider = Provider<TravelCardRepository>((_) {
+  if (Env.hasSupabase) return SupabaseTravelCardRepository();
+  return TravelCardRepositoryImpl();
+});
 
 final travelCardControllerProvider =
     StateNotifierProvider<TravelCardController, TravelCardState>((ref) {

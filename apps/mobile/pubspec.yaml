@@ -16,18 +16,24 @@ dependencies:
   # Navigation
   go_router: ^14.2.7
 
-  # Maps (free, no API key needed)
+  # Maps (free, no API key for OSM)
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
 
-  # Location
+  # Location + permissions
   geolocator: ^13.0.2
   permission_handler: ^11.3.1
+
+  # HTTP client — Overpass + OSRM + ORS APIs
+  dio: ^5.7.0
 
   # Local storage
   hive_flutter: ^1.1.0
 
-  # Networking / utils
+  # Cloud DB + Auth (optional — app works without)
+  supabase_flutter: ^2.8.0
+
+  # Utils
   uuid: ^4.4.2
   url_launcher: ^6.3.1
   intl: ^0.19.0

@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../../core/constants/app_constants.dart';
+import '../../../../app/env.dart';
 import '../../data/auth_repository_impl.dart';
+import '../../data/supabase/supabase_auth_repository.dart';
 import '../../domain/auth_repository.dart';
 
 class AuthState {
@@ -60,8 +61,8 @@ class AuthController extends StateNotifier<AuthState> {
       userId: _repo.currentUserId,
       email: _repo.currentEmail,
       displayName: _repo.currentDisplayName,
+      error: ok ? null : 'Demo login failed',
     );
-    // State updates are communicated via Riverpod StateNotifier
   }
 
   Future<void> login(String email, String password) async {
@@ -79,7 +80,6 @@ class AuthController extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
-    // State updates are communicated via Riverpod StateNotifier
   }
 
   Future<void> signup(String email, String password, String name) async {
@@ -97,17 +97,20 @@ class AuthController extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
-    // State updates are communicated via Riverpod StateNotifier
   }
 
   Future<void> logout() async {
     await _repo.logout();
     state = const AuthState();
-    // State updates are communicated via Riverpod StateNotifier
   }
 }
 
-final _authRepoProvider = Provider<AuthRepository>((_) => AuthRepositoryImpl());
+// ─── Provider — auto-selects Supabase or Hive ─────────────────────────────────
+
+final _authRepoProvider = Provider<AuthRepository>((_) {
+  if (Env.hasSupabase) return SupabaseAuthRepository();
+  return AuthRepositoryImpl();
+});
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>(
